@@ -1,32 +1,60 @@
 import { Box, Button, Grid, TextField, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { useState } from "react";
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
-const NotesForm = ({ setFeedback, fetchNotes }) => {
+
+const NotesForm = ({ setFeedback, fetchNotes, setNotes }) => {
     const [noteData, setNoteData] = useState({ title: "", MT: "", TV: "" });
     const [open, setOpen] = useState(false);
 
+    
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Add an ID to the noteData before submitting
-        const newNote = { id: Date.now().toString(), ...noteData };  // Adding the ID here
-
+    
+        const token = localStorage.getItem("token");
+        
+        if (!token) {
+            console.error("User not authenticated. Cannot save note.");
+            return;
+        }
+    
+        const decoded = jwtDecode(token);
+        const userId = decoded.userId;
+    
+        if (!userId) {
+            console.error("Invalid token: No userId found.");
+            return;
+        }
+    
+        const newNote = { 
+            userId, 
+            title: noteData.title, 
+            MT: Number(noteData.MT),  
+            TV: Number(noteData.TV)   
+        };
+    
         try {
-            const response = await axios.post("https://calc-server-hgvf.onrender.com/api/notes", newNote);
-            console.log("Response data:", response.data);
-            setFeedback({ open: true, message: "Note Saved Successfully!" });
+            setOpen(false);
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const response = await axios.post("https://calcserverv2-0.onrender.com/api/notes", newNote, config);
+            console.log("✅ Note saved:", response.data);
+    
+            // Update notes state immediately
+            setNotes(prevNotes => [...prevNotes, response.data]);
+    
+            // Fetch updated notes (optional, but ensures consistency)
+            fetchNotes();
+    
             setNoteData({ title: "", MT: "", TV: "" });
             
-            // Fetch notes after adding a new note
-            fetchNotes(); 
-
-            handleClose(); 
         } catch (error) {
-            console.error("Error saving note:", error);
-            setFeedback({ open: true, message: "Failed to save note..." });
+            console.error("❌ Error saving note:", error.response?.data || error.message);
         }
     };
+    
+    
 
     const handleClickOpen = () => {
         setOpen(true);

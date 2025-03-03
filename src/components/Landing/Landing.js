@@ -1,11 +1,13 @@
-import { Box, Snackbar, IconButton } from "@mui/material";
+import { Box, Snackbar, IconButton, Button } from "@mui/material";
 import NotesForm from "../NotesForm/NotesForm";
 import React, { useState, useEffect } from "react";
 import CloseIcon from '@mui/icons-material/Close';
 import NotesTable from "../NotesTable/NotesTable";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const Landing = () => {
+    const URL_CURRENT = "https://calcserverv2-0.onrender.com"
     const [notes, setNotes] = useState([]);
     const [feedback, setFeedback] = useState({ open: false, message: "" });
 
@@ -14,19 +16,36 @@ const Landing = () => {
     // Fetch notes from the server
     const fetchNotes = async () => {
         try {
-            const response = await axios.get("https://calc-server-hgvf.onrender.com/api/notes");
-            setNotes(response.data);
+            const token = localStorage.getItem("token");
+            console.log("🔹 Sending request with token:", token);
+    
+            const response = await axios.get("https://calcserverv2-0.onrender.com/api/notes", {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+    
+            console.log("✅ Notes fetched:", response.data);
         } catch (error) {
-            console.error("Error fetching notes:", error);
-            setFeedback({ open: true, message: "Failed to fetch notes" });
+            console.error("❌ Error fetching notes:", error);
         }
     };
+    
 
     useEffect(() => {
         fetchNotes(); // Fetch notes when the component mounts
     }, []);
+    // logout
+    const navigate = useNavigate();
+      
+    const handleLogout = () => {
+          localStorage.removeItem("token");
+          navigate("/"); // Redirect to login 
+    };
 
+    
     return (
+        <>
         <Box sx={{ flexGrow: 1, flexWrap: 'wrap' }}>
             <title>Asset Calculator</title>
             <Snackbar
@@ -42,9 +61,13 @@ const Landing = () => {
                     </React.Fragment>
                 }
             />
+            
+    
             <NotesForm setFeedback={setFeedback} setNotes={setNotes} fetchNotes={fetchNotes} />
+            <Button onClick={handleLogout} variant="contained" color="primary">Logout</Button>
             <NotesTable notes={notes} setNotes={setNotes} fetchNotes={fetchNotes} />
         </Box>
+        </>
     );
 };
 

@@ -27,7 +27,7 @@ const NotesApp = () => {
 
     return (
         <div>
-            <h1>Notes</h1>
+            <h1>Assets</h1>
             {error && <p style={{ color: 'red' }}>{error}</p>} {/* Show error if any */}
             <ul>
                 {notes.map((note) => (
